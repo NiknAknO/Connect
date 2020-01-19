@@ -1,0 +1,2 @@
+# Connect
+A game builder being built in Unity that will allow you to create and play games similar to Connect 4 and Tic Tac Toe. The builder will allow you to build your game board, customize the ways pieces can connect and the direction of gravity, and specify the number of pieces connecting needed to win. Players can then play their created games with 2-8 players, with different game modes (such as a Misère game mode).
