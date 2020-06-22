@@ -19,4 +19,8 @@ public class MainButtons : MonoBehaviour
     {
         Application.Quit();
     }
+
+    void Start() {
+        Screen.SetResolution(2560, 1440, true);
+    }
 }
