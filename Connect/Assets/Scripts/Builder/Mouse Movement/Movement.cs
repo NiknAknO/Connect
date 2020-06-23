@@ -16,7 +16,7 @@ public class Movement : MonoBehaviour
     float[] zoomCoords;
 
     float zoomFactor;
-    
+
     void Start()
     {
         oldMouseCoords = new float[2];
@@ -52,7 +52,6 @@ public class Movement : MonoBehaviour
             transform.position = new Vector3 (newCameraPosition[0], newCameraPosition[1], -1);
         }
         
-<<<<<<< Updated upstream:Connect/Assets/Scripts/Builder/Mouse Movement/Movement.cs
         if ((0.375f < Camera.main.orthographicSize && Input.mouseScrollDelta.y > 0) || (6 > Camera.main.orthographicSize && Input.mouseScrollDelta.y < 0))
         {
             zoomFactor = Mathf.Pow(2, Input.mouseScrollDelta.y);
@@ -61,16 +60,6 @@ public class Movement : MonoBehaviour
             zoomCoords[1] = Mathf.Clamp(transform.position.y + ((zoomFactor - 1) * newMouseCoords[1]) / zoomFactor, -5, 5);
 
             Camera.main.orthographicSize = Mathf.Clamp(Camera.main.orthographicSize / zoomFactor, 0.375f, 6);
-=======
-        if ((67.5f < cam.orthographicSize && Input.mouseScrollDelta.y > 0) || (1080 > cam.orthographicSize && Input.mouseScrollDelta.y < 0))
-        {
-            zoomFactor = Mathf.Pow(2, Input.mouseScrollDelta.y);
-
-            zoomCoords[0] = Mathf.Clamp(transform.position.x + ((zoomFactor - 1) * newMouseCoords[0]) / zoomFactor, -544.5f, 544.5f);
-            zoomCoords[1] = Mathf.Clamp(transform.position.y + ((zoomFactor - 1) * newMouseCoords[1]) / zoomFactor, -544.5f, 544.5f);
-            
-            cam.orthographicSize = Mathf.Clamp(cam.orthographicSize / zoomFactor, 67.5f, 1080);
->>>>>>> Stashed changes:Connect/Assets/Scripts/Builder/Camera/Movement.cs
             transform.position = new Vector3(zoomCoords[0], zoomCoords[1], -1);
 
             newMouseCoords[0] = Camera.main.ScreenToWorldPoint(Input.mousePosition)[0] - transform.position.x;
@@ -78,7 +67,5 @@ public class Movement : MonoBehaviour
         }
 
         newMouseCoords.CopyTo(oldMouseCoords, 0);
-
-        Debug.Log(transform.position.x + ", " + transform.position.y);
     }
 }
