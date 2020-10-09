@@ -5,8 +5,8 @@ using UnityEngine.UI;
 
 public class BuildUI : MonoBehaviour
 {
-    int buildMode;
-    int[] selectedLink;
+    public static int buildMode;
+    public static int[] selectedLink;
 
     [SerializeField] GameObject[] hotbar;
     [SerializeField] Sprite[] hotbarSprites;
@@ -35,6 +35,8 @@ public class BuildUI : MonoBehaviour
                 linkMaster[0].SetActive(true);
 
                 linkMaster[1].SetActive(false);
+
+                GridClick.fillMode = -1;
                 break;
 
             case 1:
@@ -42,10 +44,15 @@ public class BuildUI : MonoBehaviour
                 linkMaster[1].SetActive(true);
 
                 linkMaster[0].SetActive(false);
+
+                GridClick.fillMode = -1;
+                GridClick.selectedSlot = null;
                 break;
             
             default:
                 buildWindow.SetActive(false);
+
+                GridClick.selectedSlot = null;
                 break;
         }
 
@@ -85,7 +92,7 @@ public class BuildUI : MonoBehaviour
 
     public void RemoveLinkWindow()
     {
-        if (linkList[buildMode].Count != 0)
+        if (selectedLink[buildMode] != -1 && linkList[buildMode].Count != 0)
         {
             Destroy(linkList[buildMode][linkList[buildMode].Count-1]);
             linkList[buildMode].RemoveAt(linkList[buildMode].Count-1);
@@ -93,7 +100,6 @@ public class BuildUI : MonoBehaviour
             if (selectedLink[buildMode] == linkList[buildMode].Count) selectedLink[buildMode]--;
             SelectLinkWindow(selectedLink[buildMode]);
         }
-
     }
 
     public void ScrollToTopOf(int windowNumber)
@@ -129,6 +135,7 @@ public class BuildUI : MonoBehaviour
     void Start()
     {
         buildMode = -1;
+
         selectedLink = new int[2] {-1, -1};
         
         linkList = new List<GameObject>[2]{ new List<GameObject>{}, new List<GameObject>{}};
@@ -138,6 +145,11 @@ public class BuildUI : MonoBehaviour
         canScroll = false;
 
         buildWindow.SetActive(false);
+
+        GridClick.fillMode = -1;
+        GridClick.slots = new HashSet<List<int>>();
+
+        GridClick.selectedSlot = null;
     }
 
     void Update()
@@ -193,6 +205,23 @@ public class BuildUI : MonoBehaviour
             {
                 SetHotbar(-1);
             }
+        }
+
+        if (BuildUI.buildMode == 2 && GridClick.fillMode == -1 && !Input.GetKey(KeyCode.Mouse2))
+        {
+            if (Input.GetKeyDown(KeyCode.Mouse0))
+            {
+                GridClick.fillMode = 0;
+            }
+            else if (Input.GetKeyDown(KeyCode.Mouse1))
+            {
+                GridClick.fillMode = 1;
+            }
+        }
+
+        if ((GridClick.fillMode == 0 && Input.GetKeyUp(KeyCode.Mouse0)) || (GridClick.fillMode == 1 && Input.GetKeyUp(KeyCode.Mouse1)))
+        {
+            GridClick.fillMode = -1;
         }
     }
 }
