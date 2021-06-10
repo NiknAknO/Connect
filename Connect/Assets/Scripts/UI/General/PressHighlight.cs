@@ -13,8 +13,11 @@ public class PressHighlight : MonoBehaviour, IPointerDownHandler
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        clickedObject = gameObject;
-        didClick = true;
+        if (eventData.pointerId == -1)
+        {
+            clickedObject = gameObject;
+            didClick = true;
+        }
     }
 
     void Start()

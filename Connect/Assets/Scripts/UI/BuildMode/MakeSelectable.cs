@@ -17,6 +17,6 @@ public class MakeSelectable : MonoBehaviour
 
     public void SelectWindow()
     {
-        selecter.SelectLinkWindow(index);
+        if (index != BuildUI.selectedLink[BuildUI.buildMode]) selecter.SelectLinkWindow(index);
     }
 }
