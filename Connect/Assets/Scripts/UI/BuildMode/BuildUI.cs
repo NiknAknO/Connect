@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
@@ -21,6 +22,8 @@ public class BuildUI : MonoBehaviour
 
     [SerializeField] Sprite[] linkWindowSprites;
     Color[] linkWindowTextColors;
+
+    public static Sprite[] slotIcons;
 
     bool canScroll;
     
@@ -113,8 +116,14 @@ public class BuildUI : MonoBehaviour
 
         if (buildMode != newBuildMode) 
         {
+            if (PressHighlight.clickedObject != null)
+            {
+                buildWindow.transform.GetChild(1).GetChild(0).GetComponent<Button>().interactable = false;
+                buildWindow.transform.GetChild(1).GetChild(1).GetComponent<Button>().interactable = false;
+            }
+
             GridClick.fillMode = -1;
-            GridClick.exitToolMode();
+            GridClick.ExitToolMode();
 
             GridClick.canSelect = true;
             
@@ -135,7 +144,7 @@ public class BuildUI : MonoBehaviour
         if (selectedLink[buildMode] != windowNumber)
         {
             GridClick.fillMode = -1;
-            GridClick.exitToolMode();
+            GridClick.ExitToolMode();
 
             GridClick.canSelect = true;
 
@@ -174,26 +183,36 @@ public class BuildUI : MonoBehaviour
  
     public void AddLinkWindow()
     {
-        if (buildMode == 0)
+        if (linkList[buildMode].Count < 1024)
         {
-            GridClick.connections.Add(new List<HashSet<(int, int)>>{});
+            if (buildMode == 0)
+            {
+                GridClick.connections.Add(new List<HashSet<(int, int)>>{});
+            }
+            else if (buildMode == 1)
+            {
+                GridClick.gravLines.Add(new List<(int, int)>{});
+            }
+
+            Instantiate(linkWindow[buildMode], linkMaster[buildMode].transform);
+            linkList[buildMode].Add(linkMaster[buildMode].transform.GetChild(linkList[buildMode].Count).gameObject);
+
+            linkList[buildMode][linkList[buildMode].Count-1].transform.localPosition = new Vector3(0, -125 * (linkList[buildMode].Count-1), 0);
+
+            if (buildMode == 0)
+            {
+                linkList[buildMode][linkList[buildMode].Count-1].GetComponentInChildren<Text>().text = "Con Set " + linkList[buildMode].Count;
+            }
+            else if (buildMode == 1)
+            {
+                linkList[buildMode][linkList[buildMode].Count-1].GetComponentInChildren<Text>().text = "Grav Line " + linkList[buildMode].Count;
+            }
+
+            GridClick.lineSet[buildMode].Add(new GameObject("Line Set"));
+            GridClick.lineSet[buildMode][GridClick.lineSet[buildMode].Count-1].transform.parent = GridClick.lineMaster[buildMode].transform;
+
+            SelectLinkWindow(linkList[buildMode].Count-1);
         }
-        else if (buildMode == 1)
-        {
-            GridClick.gravLines.Add(new List<(int, int)>{});
-        }
-
-        Instantiate(linkWindow[buildMode], linkMaster[buildMode].transform);
-        linkList[buildMode].Add(linkMaster[buildMode].transform.GetChild(linkList[buildMode].Count).gameObject);
-
-        linkList[buildMode][linkList[buildMode].Count-1].transform.localPosition = new Vector3(0, -125 * (linkList[buildMode].Count-1), 0);
-
-        linkList[buildMode][linkList[buildMode].Count-1].GetComponentInChildren<Text>().text = "Link Set " + linkList[buildMode].Count;
-
-        GridClick.lineSet[buildMode].Add(new GameObject("Line Set"));
-        GridClick.lineSet[buildMode][GridClick.lineSet[buildMode].Count-1].transform.parent = GridClick.lineMaster[buildMode].transform;
-
-        SelectLinkWindow(linkList[buildMode].Count-1);
     }
 
     public void RemoveLinkWindow()
@@ -204,7 +223,7 @@ public class BuildUI : MonoBehaviour
             {
                 foreach((int, int) gravSlot in GridClick.gravLines[BuildUI.selectedLink[1]])
                 {
-                    GridClick.board.transform.GetChild(gravSlot.Item2).GetChild(gravSlot.Item1).GetChild(1).GetChild(0).gameObject.GetComponent<Image>().enabled = false;
+                    GridClick.board.transform.GetChild(gravSlot.Item2).GetChild(gravSlot.Item1).GetComponent<Image>().sprite = slotIcons[0];
                     GridClick.board.transform.GetChild(gravSlot.Item2).GetChild(gravSlot.Item1).GetChild(0).GetComponent<GridClick>().hasGravSlot = false;
                 }
 
@@ -261,6 +280,71 @@ public class BuildUI : MonoBehaviour
         canScroll = updatedScroll;
     }
 
+    public void BuildBuild(HashSet<(int, int)> lSlots, List<List<HashSet<(int, int)>>> lConnections, List<List<(int, int)>> lGravLines)
+    {
+        GridClick.slots = lSlots;
+        GridClick.connections = lConnections;
+        GridClick.gravLines = lGravLines;
+
+        foreach ((int, int) slot in GridClick.slots)
+        {
+            GridClick.board.transform.GetChild(slot.Item2).GetChild(slot.Item1).GetComponent<Image>().enabled = true;
+            GridClick.board.transform.GetChild(slot.Item2).GetChild(slot.Item1).GetChild(0).GetComponent<GridClick>().filled = true;
+        }
+
+        for (int i = 0; i < GridClick.connections.Count; i++)
+        {
+            Instantiate(linkWindow[0], linkMaster[0].transform);
+            linkList[0].Add(linkMaster[0].transform.GetChild(linkList[0].Count).gameObject);
+
+            linkList[0][linkList[0].Count-1].transform.localPosition = new Vector3(0, -125 * (linkList[0].Count-1), 0);
+
+            linkList[0][linkList[0].Count-1].GetComponentInChildren<Text>().text = "Link Set " + linkList[0].Count;
+
+            GridClick.lineSet[0].Add(new GameObject("Line Set"));
+            GridClick.lineSet[0][GridClick.lineSet[0].Count-1].transform.parent = GridClick.lineMaster[0].transform;
+
+            foreach (HashSet<(int, int)> connection in GridClick.connections[i])
+            {
+                GameObject newLine = (GameObject) Instantiate(GridClick.line[0], GridClick.lineSet[0][i].transform);
+                newLine.GetComponent<LineRenderer>().SetPosition(0, new Vector3(-790.5f + 51*connection.First().Item1, 790.5f - 51*connection.First().Item2, -0.5f));
+                newLine.GetComponent<LineRenderer>().SetPosition(1, new Vector3(-790.5f + 51*connection.Last().Item1, 790.5f - 51*connection.Last().Item2, -0.5f));
+            }
+        }
+
+        for (int i = 0; i < GridClick.gravLines.Count; i++)
+        {
+            Instantiate(linkWindow[1], linkMaster[1].transform);
+            linkList[1].Add(linkMaster[1].transform.GetChild(linkList[1].Count).gameObject);
+
+            linkList[1][linkList[1].Count-1].transform.localPosition = new Vector3(0, -125 * (linkList[1].Count-1), 0);
+
+            linkList[1][linkList[1].Count-1].GetComponentInChildren<Text>().text = "Link Set " + linkList[1].Count;
+
+            GridClick.lineSet[1].Add(new GameObject("Line Set"));
+            GridClick.lineSet[1][GridClick.lineSet[1].Count-1].transform.parent = GridClick.lineMaster[1].transform;
+
+            for (int j = 0; j < GridClick.gravLines[i].Count; j++)
+            {
+                if (j != GridClick.gravLines[i].Count-1)
+                {
+                    GameObject newLine = (GameObject) Instantiate(GridClick.line[1], GridClick.lineSet[1][i].transform);
+                    newLine.GetComponent<LineRenderer>().SetPosition(0, new Vector3(-790.5f + 51*GridClick.gravLines[i][j].Item1, 790.5f - 51*GridClick.gravLines[i][j].Item2, -0.5f));
+                    newLine.GetComponent<LineRenderer>().SetPosition(1, new Vector3(-790.5f + 51*GridClick.gravLines[i][j+1].Item1, 790.5f - 51*GridClick.gravLines[i][j+1].Item2, -0.5f));
+                }
+
+                GridClick.board.transform.GetChild(GridClick.gravLines[i][j].Item2).GetChild(GridClick.gravLines[i][j].Item1).GetChild(0).GetComponent<GridClick>().hasGravSlot = true;
+            }
+        }
+
+        GridClick.ToggleGravSlots(true);
+        GridClick.ToggleGravEndpoints(true, false);
+    }
+
+    HashSet<(int, int)> a = new HashSet<(int, int)>{(0, 0), (0, 1), (1, 0), (1, 1)};
+    List<List<HashSet<(int, int)>>> b = new List<List<HashSet<(int, int)>>>{ new List<HashSet<(int, int)>>{ new HashSet<(int, int)>{(0, 0), (0, 1)}, new HashSet<(int, int)>{(1, 0), (1, 1)} }, new List<HashSet<(int, int)>>{ new HashSet<(int, int)>{(0, 0), (1, 0)}, new HashSet<(int, int)>{(0, 1), (1, 1)} } };
+    List<List<(int, int)>> c = new List<List<(int, int)>>{ new List<(int, int)>{(0, 0), (0, 1)}, new List<(int, int)>{(1, 0), (1, 1)} };
+
     void Start()
     {
         buildMode = -1;
@@ -275,9 +359,11 @@ public class BuildUI : MonoBehaviour
 
         buildWindow.SetActive(false);
 
+        slotIcons = new Sprite[]{Resources.Load<Sprite>("UI/Sprites/Grid/Slots/BuildSlotIcon"), Resources.Load<Sprite>("UI/Sprites/Grid/Slots/GravSlotIcon")};
+
         GridClick.board = (GameObject) Instantiate(Resources.Load<GameObject>("UI/Prefabs/BuildMode/Grids/Very Large Grid"), GameObject.Find("Board").transform);
         GridClick.board.transform.SetAsFirstSibling();
-
+        
         GridClick.canSelect = true;
 
         GridClick.fillMode = -1;
@@ -297,6 +383,8 @@ public class BuildUI : MonoBehaviour
         GridClick.lineSet = new List<GameObject>[]{new List<GameObject>(), new List<GameObject>()};
 
         GridClick.line = new GameObject[]{Resources.Load<GameObject>("UI/Prefabs/BuildMode/Lines/ConLine"), Resources.Load<GameObject>("UI/Prefabs/BuildMode/Lines/GravLine")};
+
+        //BuildBuild(a, b, c);
     }
 
     void Update()
@@ -314,43 +402,37 @@ public class BuildUI : MonoBehaviour
             SetHotbar(1);
         }
 
-        if (Input.GetKeyDown(KeyCode.DownArrow))
+        if (buildMode == 0 || buildMode == 1)
         {
-            SelectLinkWindow(Mathf.Clamp(selectedLink[buildMode]+1, 0, linkList[buildMode].Count-1));
-        }
-        else if (Input.GetKeyDown(KeyCode.UpArrow))
-        {
-            if (selectedLink[buildMode] != -1)
+            if (Input.GetKeyDown(KeyCode.DownArrow))
             {
-                SelectLinkWindow(Mathf.Clamp(selectedLink[buildMode]-1, 0, linkList[buildMode].Count-1));
+                SelectLinkWindow(Mathf.Clamp(selectedLink[buildMode]+1, 0, linkList[buildMode].Count-1));
             }
-            else
+            else if (Input.GetKeyDown(KeyCode.UpArrow))
             {
-                SelectLinkWindow(linkList[buildMode].Count-1);
+                if (selectedLink[buildMode] != -1)
+                {
+                    SelectLinkWindow(Mathf.Clamp(selectedLink[buildMode]-1, 0, linkList[buildMode].Count-1));
+                }
+                else
+                {
+                    SelectLinkWindow(linkList[buildMode].Count-1);
+                }
             }
-        }
 
-        if (canScroll && Input.mouseScrollDelta.y != 0)
-        {
-            ScrollToTopOf((int)((linkMaster[buildMode].transform.localPosition.y-250)/125 - Input.mouseScrollDelta.y));
-        }
+            if (canScroll && Input.mouseScrollDelta.y != 0)
+            {
+                ScrollToTopOf((int)((linkMaster[buildMode].transform.localPosition.y-250)/125 - Input.mouseScrollDelta.y));
+            }
 
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            AddLinkWindow();
-        }
-        else if (Input.GetKeyDown(KeyCode.Backspace) || Input.GetKeyDown(KeyCode.Delete))
-        {
-            RemoveLinkWindow();
-        }
-
-        if (Input.GetKeyDown(KeyCode.Equals))
-        {
-            AddLinkWindow();
-        }
-        else if (Input.GetKeyDown(KeyCode.Minus))
-        {
-            RemoveLinkWindow();
+            if (Input.GetKeyDown(KeyCode.Equals))
+            {
+                AddLinkWindow();
+            }
+            else if (Input.GetKeyDown(KeyCode.Minus))
+            {
+                RemoveLinkWindow();
+            }
         }
 
         if (Input.GetKeyDown(KeyCode.Escape))
@@ -407,7 +489,7 @@ public class BuildUI : MonoBehaviour
         }
         if ((GridClick.toolMode == 0 && Input.GetKeyUp(KeyCode.LeftShift)) || (GridClick.toolMode == 1 && Input.GetKeyUp(KeyCode.LeftControl)) || Input.GetKeyDown(KeyCode.Mouse1) || Input.GetKeyDown(KeyCode.Escape))
         {
-            GridClick.exitToolMode();
+            GridClick.ExitToolMode();
         }
 
         if (GridClick.toolMode == -1 && GridClick.selectedSlot == null && !Input.GetKey(KeyCode.Mouse1))
@@ -417,7 +499,7 @@ public class BuildUI : MonoBehaviour
 
         if (GridClick.toolMode == 0 && GridClick.selectedSlot != null && Input.GetKeyUp(KeyCode.Mouse0))
         {
-            GridClick.selectedSlot.transform.parent.GetChild(1).GetChild(1).gameObject.GetComponent<Image>().enabled = false;
+            GridClick.selectedSlot.transform.parent.GetChild(1).GetChild(1).GetChild(0).gameObject.GetComponent<Image>().enabled = false;
             GridClick.selectedSlot = null;
         }
     }

@@ -6,7 +6,7 @@ using UnityEngine.EventSystems;
 public class Movement : MonoBehaviour
 {
     Camera cam;
-
+    
     bool onOverlay;
 
     float sensitivity;

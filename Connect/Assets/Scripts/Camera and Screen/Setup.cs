@@ -7,6 +7,6 @@ public class Setup : MonoBehaviour
     void Start()
     {
         Screen.SetResolution(Screen.currentResolution.width, Screen.currentResolution.height, true);
-        QualitySettings.vSyncCount = 1;
+        QualitySettings.vSyncCount = 0;
     }
 }

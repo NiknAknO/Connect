@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-public class GridClick : MonoBehaviour, IPointerDownHandler, IPointerEnterHandler
+public class GridClick : MonoBehaviour, IPointerDownHandler
 {
     public static GameObject board;
 
@@ -14,7 +14,7 @@ public class GridClick : MonoBehaviour, IPointerDownHandler, IPointerEnterHandle
 
     (int, int) slotLocation;
     
-    bool filled;
+    public bool filled;
     public bool hasGravSlot;
 
     public static int fillMode;
@@ -28,8 +28,6 @@ public class GridClick : MonoBehaviour, IPointerDownHandler, IPointerEnterHandle
     public static GameObject[] lineMaster;
     public static List<GameObject>[] lineSet;
     public static GameObject[] line;
-
-    List<HashSet<(int, int)>> connectedTo; 
 
     void AddSlot()
     {
@@ -45,8 +43,6 @@ public class GridClick : MonoBehaviour, IPointerDownHandler, IPointerEnterHandle
         slots.Remove(slotLocation);
 
         gameObject.transform.parent.gameObject.GetComponent<Image>().enabled = false;
-
-        List<HashSet<(int, int)>> toRemove;
 
         RemoveConSlot(false);
 
@@ -108,6 +104,7 @@ public class GridClick : MonoBehaviour, IPointerDownHandler, IPointerEnterHandle
         int[] linkRange;
 
         List<HashSet<(int, int)>> toRemove;
+        List<Transform> linesToRemove;
 
         if (local)
         {
@@ -124,12 +121,13 @@ public class GridClick : MonoBehaviour, IPointerDownHandler, IPointerEnterHandle
         foreach (int i in linkRange)
         {
             toRemove = new List<HashSet<(int, int)>>{};
+            linesToRemove = new List<Transform>();
 
             for (int j = 0; j < connections[i].Count; j++)
             {
                 if (connections[i][j].Contains(slotLocation))
                 {
-                    Destroy(lineSet[0][i].transform.GetChild(j).gameObject);
+                    linesToRemove.Add(lineSet[0][i].transform.GetChild(j));
                     toRemove.Add(connections[i][j]);
                 }
             }
@@ -138,12 +136,17 @@ public class GridClick : MonoBehaviour, IPointerDownHandler, IPointerEnterHandle
             {
                 connections[i].Remove(removedConnection);
             }
+            foreach(Transform conLine in linesToRemove)
+            {
+                Destroy(conLine.gameObject);
+                conLine.parent = null;
+            }
         }
     }
 
     void SelectConSlot()
     {
-        gameObject.transform.parent.GetChild(1).GetChild(1).gameObject.GetComponent<Image>().enabled = true;
+        gameObject.transform.parent.GetChild(1).GetChild(1).GetChild(0).gameObject.GetComponent<Image>().enabled = true;
                     
         for (int i = 0; i < lineSet[0][BuildUI.selectedLink[0]].transform.childCount; i++)
         {
@@ -159,7 +162,7 @@ public class GridClick : MonoBehaviour, IPointerDownHandler, IPointerEnterHandle
     {
         if (selectedSlot != null)
         {
-            selectedSlot.transform.parent.GetChild(1).GetChild(1).gameObject.GetComponent<Image>().enabled = false;
+            selectedSlot.transform.parent.GetChild(1).GetChild(1).GetChild(0).gameObject.GetComponent<Image>().enabled = false;
             
             if (BuildUI.selectedLink[0] != -1)
             {
@@ -173,11 +176,11 @@ public class GridClick : MonoBehaviour, IPointerDownHandler, IPointerEnterHandle
         }
     }
 
-    public static void exitToolMode()
+    public static void ExitToolMode()
     {
         if (selectedSlot != null)
         {
-            selectedSlot.transform.parent.GetChild(1).GetChild(1).gameObject.GetComponent<Image>().enabled = false;
+            selectedSlot.transform.parent.GetChild(1).GetChild(1).GetChild(0).gameObject.GetComponent<Image>().enabled = false;
             selectedSlot = null;
         }
 
@@ -196,16 +199,15 @@ public class GridClick : MonoBehaviour, IPointerDownHandler, IPointerEnterHandle
             newLine.GetComponent<LineRenderer>().SetPosition(0, new Vector3(-790.5f + 51*slotLocation.Item1, 790.5f - 51*slotLocation.Item2, -0.5f));
             newLine.GetComponent<LineRenderer>().SetPosition(1, new Vector3(-790.5f + 51*previousLocation.Item1, 790.5f - 51*previousLocation.Item2, -0.5f));
 
-            GridClick.board.transform.GetChild(gravLines[BuildUI.selectedLink[1]][gravLines[BuildUI.selectedLink[1]].Count-2].Item2).GetChild(gravLines[BuildUI.selectedLink[1]][gravLines[BuildUI.selectedLink[1]].Count-2].Item1).GetChild(1).GetChild(1).GetComponent<Image>().enabled = false;
+            board.transform.GetChild(previousLocation.Item2).GetChild(previousLocation.Item1).GetChild(1).GetChild(1).GetChild(2).gameObject.SetActive(false);
+            
+            board.transform.GetChild(previousLocation.Item2).GetChild(previousLocation.Item1).GetChild(1).GetChild(1).GetChild(1).gameObject.SetActive(true);
+            RotateGravDirection(board.transform.GetChild(previousLocation.Item2).GetChild(previousLocation.Item1).GetChild(1).GetChild(1).GetChild(1).GetComponent<LineRenderer>(), Mathf.Rad2Deg*Mathf.Atan2(previousLocation.Item2 - slotLocation.Item2, slotLocation.Item1 - previousLocation.Item1));
         }
-        else
-        {
-            GridClick.board.transform.GetChild(gravLines[BuildUI.selectedLink[1]][0].Item2).GetChild(gravLines[BuildUI.selectedLink[1]][0].Item1).GetChild(1).GetChild(2).GetComponent<Image>().enabled = true;
-        }
-        GridClick.board.transform.GetChild(gravLines[BuildUI.selectedLink[1]][gravLines[BuildUI.selectedLink[1]].Count-1].Item2).GetChild(gravLines[BuildUI.selectedLink[1]][gravLines[BuildUI.selectedLink[1]].Count-1].Item1).GetChild(1).GetChild(1).GetComponent<Image>().enabled = true;
+        
+        gameObject.transform.parent.GetComponent<Image>().sprite = BuildUI.slotIcons[1];
+        gameObject.transform.parent.GetChild(1).GetChild(1).GetChild(2).gameObject.SetActive(true);
 
-        gameObject.transform.parent.GetChild(1).GetChild(0).gameObject.GetComponent<Image>().enabled = true;
-    
         hasGravSlot = true;
     }
 
@@ -217,19 +219,23 @@ public class GridClick : MonoBehaviour, IPointerDownHandler, IPointerEnterHandle
 
         if (BuildUI.buildMode == 1 && selectedLink == BuildUI.selectedLink[1])
         {
-            gameObject.transform.parent.GetChild(1).GetChild(1).GetComponent<Image>().enabled = false;
-            gameObject.transform.parent.GetChild(1).GetChild(2).GetComponent<Image>().enabled = false;
+            gameObject.transform.parent.GetChild(1).GetChild(1).GetChild(1).gameObject.SetActive(false);
+            gameObject.transform.parent.GetChild(1).GetChild(1).GetChild(2).gameObject.SetActive(false);
         }
 
-        gameObject.transform.parent.GetChild(1).GetChild(0).gameObject.GetComponent<Image>().enabled = false;
+        gameObject.transform.parent.GetComponent<Image>().sprite = BuildUI.slotIcons[0];
+
+        List<Transform> toRemove = new List<Transform>();
 
         if (slotIndex != 0)
         {
             Destroy(lineSet[1][selectedLink].transform.GetChild(slotIndex-1).gameObject);
+            toRemove.Add(lineSet[1][selectedLink].transform.GetChild(slotIndex-1));
         }
         if (slotIndex != gravLines[selectedLink].Count-1)
         {
             Destroy(lineSet[1][selectedLink].transform.GetChild(slotIndex).gameObject);
+            toRemove.Add(lineSet[1][selectedLink].transform.GetChild(slotIndex));
         }
 
         if (slotIndex != 0 && slotIndex != gravLines[selectedLink].Count-1)
@@ -243,10 +249,16 @@ public class GridClick : MonoBehaviour, IPointerDownHandler, IPointerEnterHandle
 
         gravLines[selectedLink].Remove(slotLocation);
 
-        if (BuildUI.buildMode == 1 && selectedLink == BuildUI.selectedLink[1] && gravLines[selectedLink].Count > 0)
+        if (BuildUI.buildMode == 1 && selectedLink == BuildUI.selectedLink[1] && gravLines[selectedLink].Count != 0)
         {
-            GridClick.board.transform.GetChild(gravLines[selectedLink][0].Item2).GetChild(gravLines[selectedLink][0].Item1).GetChild(1).GetChild(2).GetComponent<Image>().enabled = true;
-            GridClick.board.transform.GetChild(gravLines[selectedLink][gravLines[selectedLink].Count-1].Item2).GetChild(gravLines[selectedLink][gravLines[selectedLink].Count-1].Item1).GetChild(1).GetChild(1).GetComponent<Image>().enabled = true;
+            if (slotIndex != 0 && slotIndex != gravLines[selectedLink].Count) RotateGravDirection(board.transform.GetChild(gravLines[selectedLink][slotIndex-1].Item2).GetChild(gravLines[selectedLink][slotIndex-1].Item1).GetChild(1).GetChild(1).GetChild(1).GetComponent<LineRenderer>(), Mathf.Rad2Deg*Mathf.Atan2(gravLines[selectedLink][slotIndex-1].Item2 - gravLines[selectedLink][slotIndex].Item2, gravLines[selectedLink][slotIndex].Item1 - gravLines[selectedLink][slotIndex-1].Item1));
+            board.transform.GetChild(gravLines[selectedLink][gravLines[selectedLink].Count-1].Item2).GetChild(gravLines[selectedLink][gravLines[selectedLink].Count-1].Item1).GetChild(1).GetChild(1).GetChild(1).gameObject.SetActive(false);
+            board.transform.GetChild(gravLines[selectedLink][gravLines[selectedLink].Count-1].Item2).GetChild(gravLines[selectedLink][gravLines[selectedLink].Count-1].Item1).GetChild(1).GetChild(1).GetChild(2).gameObject.SetActive(true);
+        }
+
+        foreach(Transform removed in toRemove)
+        {
+            removed.parent = null;
         }
     }
 
@@ -256,7 +268,7 @@ public class GridClick : MonoBehaviour, IPointerDownHandler, IPointerEnterHandle
         {
             foreach((int, int) gravSlot in gravSlotSet)
             {
-                GridClick.board.transform.GetChild(gravSlot.Item2).GetChild(gravSlot.Item1).GetChild(1).GetChild(0).GetComponent<Image>().enabled = state;
+                board.transform.GetChild(gravSlot.Item2).GetChild(gravSlot.Item1).GetComponent<Image>().sprite = BuildUI.slotIcons[state ? 1 : 0];
             }
         }
     }
@@ -267,10 +279,34 @@ public class GridClick : MonoBehaviour, IPointerDownHandler, IPointerEnterHandle
         {
             if (gravSlotSet.Count != 0)
             {
-                GridClick.board.transform.GetChild(gravSlotSet[0].Item2).GetChild(gravSlotSet[0].Item1).GetChild(1).GetChild(2).GetComponent<Image>().enabled = state && (!local || BuildUI.selectedLink[1] == -1 || gravSlotSet == gravLines[BuildUI.selectedLink[1]]);
-                GridClick.board.transform.GetChild(gravSlotSet[gravSlotSet.Count-1].Item2).GetChild(gravSlotSet[gravSlotSet.Count-1].Item1).GetChild(1).GetChild(1).GetComponent<Image>().enabled = state && (!local || BuildUI.selectedLink[1] == -1 || gravSlotSet == gravLines[BuildUI.selectedLink[1]]);
+                if (state && (!local || BuildUI.selectedLink[1] == -1 || gravSlotSet == gravLines[BuildUI.selectedLink[1]]))
+                {
+                    for (int i = 0; i < gravSlotSet.Count-1; i++)
+                    {
+                        board.transform.GetChild(gravSlotSet[i].Item2).GetChild(gravSlotSet[i].Item1).GetChild(1).GetChild(1).GetChild(1).gameObject.SetActive(true);
+                    }
+                    board.transform.GetChild(gravSlotSet[gravSlotSet.Count-1].Item2).GetChild(gravSlotSet[gravSlotSet.Count-1].Item1).GetChild(1).GetChild(1).GetChild(2).gameObject.SetActive(true);
+                }
+                else
+                {
+                    for (int i = 0; i < gravSlotSet.Count-1; i++)
+                    {
+                        board.transform.GetChild(gravSlotSet[i].Item2).GetChild(gravSlotSet[i].Item1).GetChild(1).GetChild(1).GetChild(1).gameObject.SetActive(false);
+                    }
+                    board.transform.GetChild(gravSlotSet[gravSlotSet.Count-1].Item2).GetChild(gravSlotSet[gravSlotSet.Count-1].Item1).GetChild(1).GetChild(1).GetChild(2).gameObject.SetActive(false);
+                }
             }
         }
+    }
+
+    public static void RotateGravDirection(LineRenderer gravDirection, float direction)
+    {
+        float cosDirection = Mathf.Cos(Mathf.Deg2Rad*(direction + 45));
+        float sinDirection = Mathf.Sin(Mathf.Deg2Rad*(direction + 45));
+
+        gravDirection.SetPosition(0, new Vector3(cosDirection*3 - sinDirection*4.5f, sinDirection*3 + cosDirection*4.5f, 0));
+        gravDirection.SetPosition(1, new Vector3(cosDirection*3 + sinDirection*3, sinDirection*3 - cosDirection*3, 0));
+        gravDirection.SetPosition(2, new Vector3(-cosDirection*4.5f + sinDirection*3, -sinDirection*4.5f - cosDirection*3, 0));
     }
 
     public void OnPointerDown(PointerEventData eventData)
@@ -323,7 +359,7 @@ public class GridClick : MonoBehaviour, IPointerDownHandler, IPointerEnterHandle
                     case 0:
                         if (eventData.pointerId == -1)
                         {
-                            gameObject.transform.parent.GetChild(1).GetChild(1).gameObject.GetComponent<Image>().enabled = true;
+                            gameObject.transform.parent.GetChild(1).GetChild(1).GetChild(0).gameObject.GetComponent<Image>().enabled = true;
                             selectedSlot = gameObject;
                         }
                         break;
@@ -333,12 +369,12 @@ public class GridClick : MonoBehaviour, IPointerDownHandler, IPointerEnterHandle
                         {
                             if (selectedSlot != null)
                             {
-                                selectedSlot.transform.parent.GetChild(1).GetChild(1).gameObject.GetComponent<Image>().enabled = false;
+                                selectedSlot.transform.parent.GetChild(1).GetChild(1).GetChild(0).gameObject.GetComponent<Image>().enabled = false;
 
                                 AddConLink();
                             }
 
-                            gameObject.transform.parent.GetChild(1).GetChild(1).gameObject.GetComponent<Image>().enabled = true;
+                            gameObject.transform.parent.GetChild(1).GetChild(1).GetChild(0).gameObject.GetComponent<Image>().enabled = true;
                             selectedSlot = gameObject;
                         }
                         break;
@@ -375,52 +411,49 @@ public class GridClick : MonoBehaviour, IPointerDownHandler, IPointerEnterHandle
         }
     }
 
-    public void OnPointerEnter(PointerEventData eventData)
+    public void ManualPointerEnter()
     {
-        if (!Input.GetKey(KeyCode.Mouse2))
+        if (BuildUI.buildMode == 0 && BuildUI.selectedLink[0] != -1 && filled)
         {
-            if (BuildUI.buildMode == 0 && BuildUI.selectedLink[0] != -1 && filled)
+            if (fillMode == 1 && canSelect)
             {
-                if (fillMode == 1 && canSelect)
-                {
-                    RemoveConSlot(true);
-                }
-                
-                if (fillMode == 0 && toolMode == 0)
-                {
-                    if (selectedSlot != null)
-                    {
-                        selectedSlot.transform.parent.GetChild(1).GetChild(1).gameObject.GetComponent<Image>().enabled = false;
-                        AddConLink();
-                    }
-
-                    gameObject.transform.parent.GetChild(1).GetChild(1).gameObject.GetComponent<Image>().enabled = true;
-                    selectedSlot = gameObject;
-                }
+                RemoveConSlot(true);
             }
-
-            if (BuildUI.buildMode == 1 && BuildUI.selectedLink[1] != -1 && filled)
+            
+            if (fillMode == 0 && toolMode == 0)
             {
-                if (fillMode == 0 && !Input.GetKeyDown(KeyCode.Mouse0) && !hasGravSlot)
+                if (selectedSlot != null)
                 {
-                    AddGravLink();
+                    selectedSlot.transform.parent.GetChild(1).GetChild(1).GetChild(0).gameObject.GetComponent<Image>().enabled = false;
+                    AddConLink();
                 }
-                else if (fillMode == 1 && !Input.GetKeyDown(KeyCode.Mouse1) && gravLines[BuildUI.selectedLink[1]].Contains(slotLocation))
-                {
-                    RemoveGravLink(BuildUI.selectedLink[1]);
-                }
+
+                gameObject.transform.parent.GetChild(1).GetChild(1).GetChild(0).gameObject.GetComponent<Image>().enabled = true;
+                selectedSlot = gameObject;
             }
+        }
 
-            if (BuildUI.buildMode == 2)
+        if (BuildUI.buildMode == 1 && BuildUI.selectedLink[1] != -1 && filled)
+        {
+            if (fillMode == 0 && !Input.GetKeyDown(KeyCode.Mouse0) && !hasGravSlot)
             {
-                if (fillMode == 0 && !Input.GetKeyDown(KeyCode.Mouse0))
-                {
-                    AddSlot();
-                }
-                else if (fillMode == 1 && !Input.GetKeyDown(KeyCode.Mouse1))
-                {
-                    RemoveSlot();
-                }
+                AddGravLink();
+            }
+            else if (fillMode == 1 && !Input.GetKeyDown(KeyCode.Mouse1) && gravLines[BuildUI.selectedLink[1]].Contains(slotLocation))
+            {
+                RemoveGravLink(BuildUI.selectedLink[1]);
+            }
+        }
+
+        if (BuildUI.buildMode == 2)
+        {
+            if (fillMode == 0 && !Input.GetKeyDown(KeyCode.Mouse0))
+            {
+                AddSlot();
+            }
+            else if (fillMode == 1 && !Input.GetKeyDown(KeyCode.Mouse1))
+            {
+                RemoveSlot();
             }
         }
     }
@@ -428,8 +461,6 @@ public class GridClick : MonoBehaviour, IPointerDownHandler, IPointerEnterHandle
     void Start()
     {
         slotLocation = (gameObject.transform.parent.GetSiblingIndex(), gameObject.transform.parent.parent.GetSiblingIndex());
-        
-        filled = false;
-        hasGravSlot = false;
     }
 }
+

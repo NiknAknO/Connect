@@ -8,7 +8,7 @@ public class PressHighlight : MonoBehaviour, IPointerDownHandler
 {
     Button button;
 
-    static GameObject clickedObject;
+    public static GameObject clickedObject;
     static bool didClick;
 
     public void OnPointerDown(PointerEventData eventData)
@@ -35,7 +35,8 @@ public class PressHighlight : MonoBehaviour, IPointerDownHandler
         }
         if (Input.GetKeyUp(KeyCode.Mouse0))
         {
-            if (clickedObject != gameObject) button.interactable = true;
+            button.interactable = true;
+            clickedObject = null;
             didClick = false;
         }
     }
