@@ -377,9 +377,6 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 233e795b2e696524291a101e4a726994, type: 3}
   - {fileID: 21300000, guid: 55473f8db9119884885f022a95124baa, type: 3}
   - {fileID: 21300000, guid: 8f655a2df8851a34898f2de824d4a47a, type: 3}
-  SlotIcons:
-  - {fileID: 21300000, guid: c57cb5792017db14295db764144ed92d, type: 3}
-  - {fileID: 21300000, guid: dc86bd8ef14c46d4a87c4cacbf0aa2bf, type: 3}
 --- !u!1 &207606578
 GameObject:
   m_ObjectHideFlags: 0
@@ -693,8 +690,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 194154493}
-        m_MethodName: SetHotbar
-        m_Mode: 3
+        m_MethodName: TestThis
+        m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -2015,8 +2012,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 194154493}
-        m_MethodName: SetHotbar
-        m_Mode: 3
+        m_MethodName: TestThis
+        m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine

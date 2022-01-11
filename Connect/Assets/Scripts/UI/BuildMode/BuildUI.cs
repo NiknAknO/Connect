@@ -27,6 +27,11 @@ public class BuildUI : MonoBehaviour
 
     bool canScroll;
     
+    public void TestThis()
+    {
+        Debug.Log("Test");
+    }
+
     public void SetHotbar(int newBuildMode)
     {
         if (buildMode != -1) hotbar[buildMode].GetComponent<Image>().sprite = hotbarSprites[2*buildMode];
@@ -55,7 +60,7 @@ public class BuildUI : MonoBehaviour
                 GridClick.ToggleGravEndpoints(false, false);
 
                 break;
-
+            
             case 1:
                 buildWindow.SetActive(true);
                 linkMaster[1].SetActive(true);

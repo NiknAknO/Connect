@@ -6,10 +6,10 @@ using UnityEngine.EventSystems;
 
 public class PressHighlight : MonoBehaviour, IPointerDownHandler
 {
-    Button button;
-
     public static GameObject clickedObject;
-    static bool didClick;
+    static bool didClick = false;
+
+    static List<Button> highlightables = new List<Button>();
 
     public void OnPointerDown(PointerEventData eventData)
     {
@@ -22,22 +22,30 @@ public class PressHighlight : MonoBehaviour, IPointerDownHandler
 
     void Start()
     {
-        button = gameObject.GetComponent<Button>();
-    
-        didClick = false;
+        highlightables.Add(gameObject.GetComponent<Button>());
     }
 
     void Update()
     {
-        if (didClick && Input.GetKeyDown(KeyCode.Mouse0))
+        if (clickedObject == gameObject)
         {
-            if (clickedObject != gameObject) button.interactable = false;
-        }
-        if (Input.GetKeyUp(KeyCode.Mouse0))
-        {
-            button.interactable = true;
-            clickedObject = null;
-            didClick = false;
+            if (didClick && Input.GetKeyDown(KeyCode.Mouse0))
+            {
+                foreach(Button highlightable in highlightables)
+                {
+                    if (highlightable.gameObject != gameObject) highlightable.interactable = false;
+                }
+            }
+            if (Input.GetKeyUp(KeyCode.Mouse0))
+            {
+                foreach(Button highlightable in highlightables)
+                {
+                    highlightable.interactable = true;
+                }
+
+                clickedObject = null;
+                didClick = false;
+            }
         }
     }
 }
