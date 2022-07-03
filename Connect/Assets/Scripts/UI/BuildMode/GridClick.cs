@@ -205,7 +205,8 @@ public class GridClick : MonoBehaviour, IPointerDownHandler
             RotateGravDirection(board.transform.GetChild(previousLocation.Item2).GetChild(previousLocation.Item1).GetChild(1).GetChild(1).GetChild(1).GetComponent<LineRenderer>(), Mathf.Rad2Deg*Mathf.Atan2(previousLocation.Item2 - slotLocation.Item2, slotLocation.Item1 - previousLocation.Item1));
         }
         
-        gameObject.transform.parent.GetComponent<Image>().sprite = BuildUI.slotIcons[1];
+        //gameObject.transform.parent.GetComponent<Image>().sprite = BuildUI.slotIcons[1];
+        gameObject.transform.parent.GetChild(1).GetChild(0).GetComponent<Image>().enabled = true;
         gameObject.transform.parent.GetChild(1).GetChild(1).GetChild(2).gameObject.SetActive(true);
 
         hasGravSlot = true;
@@ -223,7 +224,8 @@ public class GridClick : MonoBehaviour, IPointerDownHandler
             gameObject.transform.parent.GetChild(1).GetChild(1).GetChild(2).gameObject.SetActive(false);
         }
 
-        gameObject.transform.parent.GetComponent<Image>().sprite = BuildUI.slotIcons[0];
+        //gameObject.transform.parent.GetComponent<Image>().sprite = BuildUI.slotIcons[0];
+        gameObject.transform.parent.GetChild(1).GetChild(0).GetComponent<Image>().enabled = false;
 
         List<Transform> toRemove = new List<Transform>();
 
@@ -245,13 +247,14 @@ public class GridClick : MonoBehaviour, IPointerDownHandler
         
             newLine.GetComponent<LineRenderer>().SetPosition(0, new Vector3(-790.5f + 51*gravLines[selectedLink][slotIndex-1].Item1, 790.5f - 51*gravLines[selectedLink][slotIndex-1].Item2, -0.5f));
             newLine.GetComponent<LineRenderer>().SetPosition(1, new Vector3(-790.5f + 51*gravLines[selectedLink][slotIndex+1].Item1, 790.5f - 51*gravLines[selectedLink][slotIndex+1].Item2, -0.5f));
+        
+            RotateGravDirection(board.transform.GetChild(gravLines[selectedLink][slotIndex-1].Item2).GetChild(gravLines[selectedLink][slotIndex-1].Item1).GetChild(1).GetChild(1).GetChild(1).GetComponent<LineRenderer>(), Mathf.Rad2Deg*Mathf.Atan2(gravLines[selectedLink][slotIndex-1].Item2 - gravLines[selectedLink][slotIndex+1].Item2, gravLines[selectedLink][slotIndex+1].Item1 - gravLines[selectedLink][slotIndex-1].Item1));
         }
 
         gravLines[selectedLink].Remove(slotLocation);
 
         if (BuildUI.buildMode == 1 && selectedLink == BuildUI.selectedLink[1] && gravLines[selectedLink].Count != 0)
         {
-            if (slotIndex != 0 && slotIndex != gravLines[selectedLink].Count) RotateGravDirection(board.transform.GetChild(gravLines[selectedLink][slotIndex-1].Item2).GetChild(gravLines[selectedLink][slotIndex-1].Item1).GetChild(1).GetChild(1).GetChild(1).GetComponent<LineRenderer>(), Mathf.Rad2Deg*Mathf.Atan2(gravLines[selectedLink][slotIndex-1].Item2 - gravLines[selectedLink][slotIndex].Item2, gravLines[selectedLink][slotIndex].Item1 - gravLines[selectedLink][slotIndex-1].Item1));
             board.transform.GetChild(gravLines[selectedLink][gravLines[selectedLink].Count-1].Item2).GetChild(gravLines[selectedLink][gravLines[selectedLink].Count-1].Item1).GetChild(1).GetChild(1).GetChild(1).gameObject.SetActive(false);
             board.transform.GetChild(gravLines[selectedLink][gravLines[selectedLink].Count-1].Item2).GetChild(gravLines[selectedLink][gravLines[selectedLink].Count-1].Item1).GetChild(1).GetChild(1).GetChild(2).gameObject.SetActive(true);
         }
@@ -268,7 +271,7 @@ public class GridClick : MonoBehaviour, IPointerDownHandler
         {
             foreach((int, int) gravSlot in gravSlotSet)
             {
-                board.transform.GetChild(gravSlot.Item2).GetChild(gravSlot.Item1).GetComponent<Image>().sprite = BuildUI.slotIcons[state ? 1 : 0];
+                board.transform.GetChild(gravSlot.Item2).GetChild(gravSlot.Item1).GetChild(1).GetChild(0).GetComponent<Image>().enabled = state;
             }
         }
     }
