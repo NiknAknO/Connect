@@ -56,9 +56,12 @@ public class BuildUI : MonoBehaviour
                     }
                 }
 
+                GridClick.DeselectGravSlot();
+
                 GridClick.ToggleGravSlots(false);
                 GridClick.ToggleGravEndpoints(false, false);
 
+                if (FillRect.selectedSlot != null) FillRect.ApplyFill(true);
                 break;
             
             case 1:
@@ -78,10 +81,15 @@ public class BuildUI : MonoBehaviour
                     }
                 }
 
-                GridClick.ToggleGravSlots(true);
-                GridClick.ToggleGravEndpoints(true, true);
+                if (buildMode != 1)
+                {
+                    GridClick.ToggleGravSlots(true);
+                    GridClick.ToggleGravEndpoints(true, true);
+                }
 
                 GridClick.DeselectConSlot();
+
+                if (FillRect.selectedSlot != null) FillRect.ApplyFill(true);
                 break;
             
             case 2:
@@ -91,6 +99,7 @@ public class BuildUI : MonoBehaviour
                 GridClick.lineMaster[1].SetActive(false);
 
                 GridClick.DeselectConSlot();
+                GridClick.DeselectGravSlot();
 
                 GridClick.ToggleGravSlots(false);
                 GridClick.ToggleGravEndpoints(false, false);
@@ -127,11 +136,9 @@ public class BuildUI : MonoBehaviour
                 buildWindow.transform.GetChild(1).GetChild(1).GetComponent<Button>().interactable = false;
             }
 
+            GridClick.ExitConToolMode();
             GridClick.fillMode = -1;
-            GridClick.ExitToolMode();
 
-            GridClick.canSelect = true;
-            
             buildMode = newBuildMode;
         }
     }
@@ -139,6 +146,7 @@ public class BuildUI : MonoBehaviour
     public void SelectLinkWindow(int windowNumber)
     {
         GridClick.DeselectConSlot();
+        GridClick.DeselectGravSlot();
 
         if (selectedLink[buildMode] != -1) 
         {
@@ -149,9 +157,7 @@ public class BuildUI : MonoBehaviour
         if (selectedLink[buildMode] != windowNumber)
         {
             GridClick.fillMode = -1;
-            GridClick.ExitToolMode();
-
-            GridClick.canSelect = true;
+            GridClick.ExitConToolMode();
 
             selectedLink[buildMode] = windowNumber;
         }
@@ -228,7 +234,7 @@ public class BuildUI : MonoBehaviour
             {
                 foreach((int, int) gravSlot in GridClick.gravLines[BuildUI.selectedLink[1]])
                 {
-                    GridClick.board.transform.GetChild(gravSlot.Item2).GetChild(gravSlot.Item1).GetComponent<Image>().sprite = slotIcons[0];
+                    GridClick.board.transform.GetChild(gravSlot.Item2).GetChild(gravSlot.Item1).GetChild(1).GetChild(0).GetComponent<Image>().enabled = false;
                     GridClick.board.transform.GetChild(gravSlot.Item2).GetChild(gravSlot.Item1).GetChild(0).GetComponent<GridClick>().hasGravSlot = false;
                 }
 
@@ -297,19 +303,19 @@ public class BuildUI : MonoBehaviour
             GridClick.board.transform.GetChild(slot.Item2).GetChild(slot.Item1).GetChild(0).GetComponent<GridClick>().filled = true;
         }
 
-        for (int i = 0; i < GridClick.connections.Count; i++)
+        for (int i = 0; i < lConnections.Count; i++)
         {
             Instantiate(linkWindow[0], linkMaster[0].transform);
             linkList[0].Add(linkMaster[0].transform.GetChild(linkList[0].Count).gameObject);
 
             linkList[0][linkList[0].Count-1].transform.localPosition = new Vector3(0, -125 * (linkList[0].Count-1), 0);
 
-            linkList[0][linkList[0].Count-1].GetComponentInChildren<Text>().text = "Link Set " + linkList[0].Count;
+            linkList[0][linkList[0].Count-1].GetComponentInChildren<Text>().text = "Con Set " + linkList[0].Count;
 
             GridClick.lineSet[0].Add(new GameObject("Line Set"));
             GridClick.lineSet[0][GridClick.lineSet[0].Count-1].transform.parent = GridClick.lineMaster[0].transform;
 
-            foreach (HashSet<(int, int)> connection in GridClick.connections[i])
+            foreach (HashSet<(int, int)> connection in lConnections[i])
             {
                 GameObject newLine = (GameObject) Instantiate(GridClick.line[0], GridClick.lineSet[0][i].transform);
                 newLine.GetComponent<LineRenderer>().SetPosition(0, new Vector3(-790.5f + 51*connection.First().Item1, 790.5f - 51*connection.First().Item2, -0.5f));
@@ -317,38 +323,36 @@ public class BuildUI : MonoBehaviour
             }
         }
 
-        for (int i = 0; i < GridClick.gravLines.Count; i++)
+        for (int i = 0; i < lGravLines.Count; i++)
         {
             Instantiate(linkWindow[1], linkMaster[1].transform);
             linkList[1].Add(linkMaster[1].transform.GetChild(linkList[1].Count).gameObject);
 
             linkList[1][linkList[1].Count-1].transform.localPosition = new Vector3(0, -125 * (linkList[1].Count-1), 0);
 
-            linkList[1][linkList[1].Count-1].GetComponentInChildren<Text>().text = "Link Set " + linkList[1].Count;
+            linkList[1][linkList[1].Count-1].GetComponentInChildren<Text>().text = "Grav Line " + linkList[1].Count;
 
             GridClick.lineSet[1].Add(new GameObject("Line Set"));
             GridClick.lineSet[1][GridClick.lineSet[1].Count-1].transform.parent = GridClick.lineMaster[1].transform;
 
-            for (int j = 0; j < GridClick.gravLines[i].Count; j++)
+            for (int j = 0; j < lGravLines[i].Count; j++)
             {
-                if (j != GridClick.gravLines[i].Count-1)
+                if (j != lGravLines[i].Count-1)
                 {
                     GameObject newLine = (GameObject) Instantiate(GridClick.line[1], GridClick.lineSet[1][i].transform);
-                    newLine.GetComponent<LineRenderer>().SetPosition(0, new Vector3(-790.5f + 51*GridClick.gravLines[i][j].Item1, 790.5f - 51*GridClick.gravLines[i][j].Item2, -0.5f));
-                    newLine.GetComponent<LineRenderer>().SetPosition(1, new Vector3(-790.5f + 51*GridClick.gravLines[i][j+1].Item1, 790.5f - 51*GridClick.gravLines[i][j+1].Item2, -0.5f));
+                    newLine.GetComponent<LineRenderer>().SetPosition(0, new Vector3(-790.5f + 51*lGravLines[i][j].Item1, 790.5f - 51*lGravLines[i][j].Item2, -0.5f));
+                    newLine.GetComponent<LineRenderer>().SetPosition(1, new Vector3(-790.5f + 51*lGravLines[i][j+1].Item1, 790.5f - 51*lGravLines[i][j+1].Item2, -0.5f));
+
+                    GridClick.RotateGravDirection(GridClick.board.transform.GetChild(lGravLines[i][j].Item2).GetChild(lGravLines[i][j].Item1).GetChild(1).GetChild(1).GetChild(1).GetComponent<LineRenderer>(), Mathf.Rad2Deg*Mathf.Atan2(lGravLines[i][j].Item2 - lGravLines[i][j+1].Item2, lGravLines[i][j].Item1 - lGravLines[i][j+1].Item1));
                 }
 
-                GridClick.board.transform.GetChild(GridClick.gravLines[i][j].Item2).GetChild(GridClick.gravLines[i][j].Item1).GetChild(0).GetComponent<GridClick>().hasGravSlot = true;
+                GridClick.board.transform.GetChild(lGravLines[i][j].Item2).GetChild(lGravLines[i][j].Item1).GetChild(0).GetComponent<GridClick>().hasGravSlot = true;
             }
         }
 
         GridClick.ToggleGravSlots(true);
         GridClick.ToggleGravEndpoints(true, false);
     }
-
-    HashSet<(int, int)> a = new HashSet<(int, int)>{(0, 0), (0, 1), (1, 0), (1, 1)};
-    List<List<HashSet<(int, int)>>> b = new List<List<HashSet<(int, int)>>>{ new List<HashSet<(int, int)>>{ new HashSet<(int, int)>{(0, 0), (0, 1)}, new HashSet<(int, int)>{(1, 0), (1, 1)} }, new List<HashSet<(int, int)>>{ new HashSet<(int, int)>{(0, 0), (1, 0)}, new HashSet<(int, int)>{(0, 1), (1, 1)} } };
-    List<List<(int, int)>> c = new List<List<(int, int)>>{ new List<(int, int)>{(0, 0), (0, 1)}, new List<(int, int)>{(1, 0), (1, 1)} };
 
     void Start()
     {
@@ -368,8 +372,8 @@ public class BuildUI : MonoBehaviour
 
         GridClick.board = (GameObject) Instantiate(Resources.Load<GameObject>("UI/Prefabs/BuildMode/Grids/Very Large Grid"), GameObject.Find("Board").transform);
         GridClick.board.transform.SetAsFirstSibling();
-        
-        GridClick.canSelect = true;
+
+        GridClick.clickedBoard = false;
 
         GridClick.fillMode = -1;
         GridClick.toolMode = -1;
@@ -388,8 +392,6 @@ public class BuildUI : MonoBehaviour
         GridClick.lineSet = new List<GameObject>[]{new List<GameObject>(), new List<GameObject>()};
 
         GridClick.line = new GameObject[]{Resources.Load<GameObject>("UI/Prefabs/BuildMode/Lines/ConLine"), Resources.Load<GameObject>("UI/Prefabs/BuildMode/Lines/GravLine")};
-
-        //BuildBuild(a, b, c);
     }
 
     void Update()
@@ -430,23 +432,30 @@ public class BuildUI : MonoBehaviour
                 ScrollToTopOf((int)((linkMaster[buildMode].transform.localPosition.y-250)/125 - Input.mouseScrollDelta.y));
             }
 
-            if (Input.GetKeyDown(KeyCode.Equals))
+            if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Equals))
             {
                 AddLinkWindow();
             }
-            else if (Input.GetKeyDown(KeyCode.Minus))
+            else if (Input.GetKeyDown(KeyCode.Q) || Input.GetKeyDown(KeyCode.Backspace) || Input.GetKeyDown(KeyCode.Delete) || Input.GetKeyDown(KeyCode.Minus))
             {
                 RemoveLinkWindow();
             }
         }
 
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (Input.GetKeyDown(KeyCode.Escape) && GridClick.toolMode == -1)
         {
-            if ((buildMode == 0 || buildMode == 1) && GridClick.toolMode == -1)
+            if ((buildMode == 0 || buildMode == 1))
             {
-                if (buildMode == 0 && GridClick.selectedSlot != null)
+                if (GridClick.selectedSlot != null)
                 {
-                    GridClick.DeselectConSlot();
+                    if (buildMode == 0)
+                    {
+                        GridClick.DeselectConSlot();
+                    }
+                    else if (buildMode == 1)
+                    {
+                        GridClick.DeselectGravSlot();
+                    }
                 }
                 else if (selectedLink[buildMode] != -1) 
                 {
@@ -463,49 +472,88 @@ public class BuildUI : MonoBehaviour
             }
         }
 
-        if (GridClick.fillMode == -1 && !Input.GetKey(KeyCode.Mouse2) && !EventSystem.current.IsPointerOverGameObject())
+        if (!GridClick.clickedBoard)
         {
-            if (Input.GetKeyDown(KeyCode.Mouse0) && !Input.GetKey(KeyCode.Mouse1))
+            if (!Input.GetKey(KeyCode.Mouse2) && !EventSystem.current.IsPointerOverGameObject())
             {
-                GridClick.fillMode = 0;
+                if (Input.GetKeyDown(KeyCode.Mouse1))
+                {
+                    GridClick.fillMode = 1;
+                }
+                else if (Input.GetKeyDown(KeyCode.Mouse0) && !Input.GetKey(KeyCode.Mouse1))
+                {
+                    GridClick.fillMode = 0;
+                }
             }
-            else if (Input.GetKeyDown(KeyCode.Mouse1) && !Input.GetKey(KeyCode.Mouse0))
+            if ((GridClick.fillMode == 0 && Input.GetKeyUp(KeyCode.Mouse0)) || (GridClick.fillMode == 1 && Input.GetKeyUp(KeyCode.Mouse1)) || (EventSystem.current.IsPointerOverGameObject() && (Input.GetKeyDown(KeyCode.Mouse0) || Input.GetKeyDown(KeyCode.Mouse1))))
             {
-                GridClick.fillMode = 1;
+                GridClick.fillMode = -1;
             }
-        }
-        if ((GridClick.fillMode == 0 && Input.GetKeyUp(KeyCode.Mouse0)) || (GridClick.fillMode == 1 && Input.GetKeyUp(KeyCode.Mouse1)))
-        {
-            GridClick.fillMode = -1;
         }
 
-        if (buildMode == 0 && GridClick.fillMode == -1 && GridClick.toolMode == -1 && !Input.GetKey(KeyCode.Mouse2) && GridClick.selectedSlot == null)
+        if (buildMode == 0)
         {
-            if (Input.GetKeyDown(KeyCode.LeftShift) && !Input.GetKey(KeyCode.LeftControl))
+            if (GridClick.selectedSlot != null && !GridClick.clickedBoard && (Input.GetKeyDown(KeyCode.Mouse0) || Input.GetKeyDown(KeyCode.Mouse1))) 
+            {
+                if (GridClick.toolMode == -1)
+                {
+                    GridClick.DeselectConSlot();
+                }
+                else if (GridClick.toolMode == 1)
+                {
+                    GridClick.ExitConToolMode();
+                }
+            }
+
+            if (GridClick.fillMode == -1 && GridClick.toolMode == -1 && GridClick.selectedSlot == null)
+            {
+                if (selectedLink[0] != -1 && Input.GetKeyDown(KeyCode.LeftShift) && !Input.GetKey(KeyCode.LeftControl))
+                {
+                    GridClick.toolMode = 0;
+                }
+                else if (selectedLink[0] != -1 && Input.GetKeyDown(KeyCode.LeftControl) && !Input.GetKey(KeyCode.LeftShift))
+                {
+                    GridClick.toolMode = 1;
+                }
+            }
+            if ((GridClick.toolMode == 0 && Input.GetKeyUp(KeyCode.LeftShift)) || (GridClick.toolMode == 1 && Input.GetKeyUp(KeyCode.LeftControl)) || (GridClick.toolMode != -1 && (Input.GetKeyDown(KeyCode.Mouse1) || Input.GetKeyDown(KeyCode.Escape))))
+            {
+                GridClick.ExitConToolMode();
+            }
+        
+            if (GridClick.toolMode == 0 && GridClick.selectedSlot != null && Input.GetKeyUp(KeyCode.Mouse0))
+            {
+                GridClick.selectedSlot.transform.parent.GetChild(1).GetChild(1).GetChild(0).gameObject.GetComponent<Image>().enabled = false;
+                GridClick.selectedSlot = null;
+            }
+        }
+
+        if (buildMode == 1 && GridClick.selectedSlot != null && (Input.GetKeyUp(KeyCode.Mouse0) || Input.GetKeyDown(KeyCode.Mouse1)))
+        {
+            GridClick.DeselectGravSlot();
+        }
+
+        if (buildMode == 2)
+        {
+            if (GridClick.fillMode == -1 && Input.GetKeyDown(KeyCode.LeftShift))
             {
                 GridClick.toolMode = 0;
-                GridClick.canSelect = false;
             }
-            else if (Input.GetKeyDown(KeyCode.LeftControl) && !Input.GetKey(KeyCode.LeftShift))
+            
+            if (GridClick.toolMode == 0)
             {
-                GridClick.toolMode = 1;
-                GridClick.canSelect = false;
+                if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyUp(KeyCode.LeftShift))
+                {
+                    if (FillRect.selectedSlot != null) FillRect.ApplyFill(!Input.GetKeyDown(KeyCode.Escape));
+
+                    GridClick.toolMode = -1;
+                    GridClick.fillMode = -1;
+                }
             }
         }
-        if ((GridClick.toolMode == 0 && Input.GetKeyUp(KeyCode.LeftShift)) || (GridClick.toolMode == 1 && Input.GetKeyUp(KeyCode.LeftControl)) || Input.GetKeyDown(KeyCode.Mouse1) || Input.GetKeyDown(KeyCode.Escape))
-        {
-            GridClick.ExitToolMode();
-        }
+    }
 
-        if (GridClick.toolMode == -1 && GridClick.selectedSlot == null && !Input.GetKey(KeyCode.Mouse1))
-        {
-            GridClick.canSelect = true;
-        }
-
-        if (GridClick.toolMode == 0 && GridClick.selectedSlot != null && Input.GetKeyUp(KeyCode.Mouse0))
-        {
-            GridClick.selectedSlot.transform.parent.GetChild(1).GetChild(1).GetChild(0).gameObject.GetComponent<Image>().enabled = false;
-            GridClick.selectedSlot = null;
-        }
+    void LateUpdate() {
+        GridClick.clickedBoard = false;
     }
 }

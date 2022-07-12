@@ -10,7 +10,7 @@ public class GridClick : MonoBehaviour, IPointerDownHandler
     public static GameObject board;
 
     public static GameObject selectedSlot;
-    public static bool canSelect;
+    public static bool clickedBoard;
 
     (int, int) slotLocation;
     
@@ -29,26 +29,32 @@ public class GridClick : MonoBehaviour, IPointerDownHandler
     public static List<GameObject>[] lineSet;
     public static GameObject[] line;
 
-    void AddSlot()
+    public void AddSlot()
     {
-        filled = true;
-        slots.Add(slotLocation);
-    
-        gameObject.transform.parent.gameObject.GetComponent<Image>().enabled = true;
+        if (!filled)
+        {
+            filled = true;
+            slots.Add(slotLocation);
+        
+            gameObject.transform.parent.gameObject.GetComponent<Image>().enabled = true;
+        }
     }
 
-    void RemoveSlot()
+    public void RemoveSlot()
     {
-        filled = false;
-        slots.Remove(slotLocation);
-
-        gameObject.transform.parent.gameObject.GetComponent<Image>().enabled = false;
-
-        RemoveConSlot(false);
-
-        for (int i = 0; i < gravLines.Count; i++)
+        if (filled)
         {
-            if (gravLines[i].Contains(slotLocation)) RemoveGravLink(i);
+            filled = false;
+            slots.Remove(slotLocation);
+
+            gameObject.transform.parent.gameObject.GetComponent<Image>().enabled = false;
+
+            RemoveConSlot(false);
+
+            for (int i = 0; i < gravLines.Count; i++)
+            {
+                if (gravLines[i].Contains(slotLocation)) RemoveGravLink(i);
+            }
         }
     }
 
@@ -153,17 +159,15 @@ public class GridClick : MonoBehaviour, IPointerDownHandler
             if (!connections[BuildUI.selectedLink[0]][i].Contains(slotLocation)) lineSet[0][BuildUI.selectedLink[0]].transform.GetChild(i).gameObject.SetActive(false);
         }
 
-        canSelect = false;
-
         selectedSlot = gameObject;
     }
 
     public static void DeselectConSlot()
     {
-        if (selectedSlot != null)
+        if (BuildUI.buildMode == 0 && selectedSlot != null)
         {
             selectedSlot.transform.parent.GetChild(1).GetChild(1).GetChild(0).gameObject.GetComponent<Image>().enabled = false;
-            
+
             if (BuildUI.selectedLink[0] != -1)
             {
                 for (int i = 0; i < lineSet[0][BuildUI.selectedLink[0]].transform.childCount; i++)
@@ -172,18 +176,64 @@ public class GridClick : MonoBehaviour, IPointerDownHandler
                 }
             }
 
+            fillMode = -1;
+
             selectedSlot = null;
         }
     }
 
-    public static void ExitToolMode()
+    void SelectGravSlot()
+    {
+        ToggleGravSlots(false);
+
+        int gravLineIndex = gravLines[BuildUI.selectedLink[1]].IndexOf(slotLocation);
+
+        for (int i = 0; i < gravLines[BuildUI.selectedLink[1]].Count; i++)
+        {
+            board.transform.GetChild(gravLines[BuildUI.selectedLink[1]][i].Item2).GetChild(gravLines[BuildUI.selectedLink[1]][i].Item1).GetChild(1).GetChild(0).GetComponent<Image>().enabled = true;
+            
+            if (i != gravLineIndex-1 && i != gravLineIndex && i != gravLineIndex+1)
+            {
+                board.transform.GetChild(gravLines[BuildUI.selectedLink[1]][i].Item2).GetChild(gravLines[BuildUI.selectedLink[1]][i].Item1).GetChild(1).GetChild(1).GetChild(1).gameObject.SetActive(false);
+                board.transform.GetChild(gravLines[BuildUI.selectedLink[1]][i].Item2).GetChild(gravLines[BuildUI.selectedLink[1]][i].Item1).GetChild(1).GetChild(1).GetChild(2).gameObject.SetActive(false);
+            }
+            
+            if (i != gravLineIndex-1 && i != gravLineIndex && i != gravLines[BuildUI.selectedLink[1]].Count-1)
+            {
+                lineSet[1][BuildUI.selectedLink[1]].transform.GetChild(i).gameObject.SetActive(false);
+            }
+        }
+
+        selectedSlot = gameObject;
+    }
+
+    public static void DeselectGravSlot()
+    {
+        if (BuildUI.buildMode == 1 && selectedSlot != null)
+        {
+            ToggleGravSlots(true);
+            ToggleGravEndpoints(true, true);
+
+            for (int i = 0; i < lineSet[1][BuildUI.selectedLink[1]].transform.childCount; i++)
+            {
+                lineSet[1][BuildUI.selectedLink[1]].transform.GetChild(i).gameObject.SetActive(true);
+            }
+
+            fillMode = -1;
+
+            selectedSlot = null;
+        }
+    }
+
+    public static void ExitConToolMode()
     {
         if (selectedSlot != null)
         {
             selectedSlot.transform.parent.GetChild(1).GetChild(1).GetChild(0).gameObject.GetComponent<Image>().enabled = false;
             selectedSlot = null;
         }
-
+        
+        fillMode = -1;
         toolMode = -1;
     }
 
@@ -205,7 +255,6 @@ public class GridClick : MonoBehaviour, IPointerDownHandler
             RotateGravDirection(board.transform.GetChild(previousLocation.Item2).GetChild(previousLocation.Item1).GetChild(1).GetChild(1).GetChild(1).GetComponent<LineRenderer>(), Mathf.Rad2Deg*Mathf.Atan2(previousLocation.Item2 - slotLocation.Item2, slotLocation.Item1 - previousLocation.Item1));
         }
         
-        //gameObject.transform.parent.GetComponent<Image>().sprite = BuildUI.slotIcons[1];
         gameObject.transform.parent.GetChild(1).GetChild(0).GetComponent<Image>().enabled = true;
         gameObject.transform.parent.GetChild(1).GetChild(1).GetChild(2).gameObject.SetActive(true);
 
@@ -224,7 +273,6 @@ public class GridClick : MonoBehaviour, IPointerDownHandler
             gameObject.transform.parent.GetChild(1).GetChild(1).GetChild(2).gameObject.SetActive(false);
         }
 
-        //gameObject.transform.parent.GetComponent<Image>().sprite = BuildUI.slotIcons[0];
         gameObject.transform.parent.GetChild(1).GetChild(0).GetComponent<Image>().enabled = false;
 
         List<Transform> toRemove = new List<Transform>();
@@ -314,18 +362,15 @@ public class GridClick : MonoBehaviour, IPointerDownHandler
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        if (!Input.GetKey(KeyCode.Mouse2))
+        if (!Input.GetKey(KeyCode.Mouse2) && (eventData.pointerId == -2 || !Input.GetKeyDown(KeyCode.Mouse0) || !Input.GetKeyDown(KeyCode.Mouse1)))
         {
-            if (fillMode == -1)
+            if (eventData.pointerId == -2)
             {
-                if (eventData.pointerId == -1)
-                {
-                    fillMode = 0;
-                }
-                else if (eventData.pointerId == -2)
-                {
-                    fillMode = 1;
-                }
+                fillMode = 1;
+            }
+            else if (fillMode == -1 && !Input.GetKey(KeyCode.Mouse1))
+            {
+                fillMode = 0;
             }
             
             if (BuildUI.buildMode == 0 && BuildUI.selectedLink[0] != -1 && filled)
@@ -385,22 +430,36 @@ public class GridClick : MonoBehaviour, IPointerDownHandler
             }
             else if (BuildUI.buildMode == 0 && BuildUI.selectedLink[0] != -1)
             {
-                DeselectConSlot();
+                if (toolMode == -1)
+                {
+                    DeselectConSlot();
+                }
+                else if (toolMode == 1)
+                {
+                    ExitConToolMode();
+                }
             }
 
             if (BuildUI.buildMode == 1 && BuildUI.selectedLink[1] != -1 && filled)
             {
-                if (fillMode == 0 && !hasGravSlot)
+                if (fillMode == 0 && eventData.pointerId == -1 && !hasGravSlot)
                 {
                     AddGravLink();
                 }
-                else if (fillMode == 1 && gravLines[BuildUI.selectedLink[1]].Contains(slotLocation))
+                else if (gravLines[BuildUI.selectedLink[1]].Contains(slotLocation))
                 {
-                    RemoveGravLink(BuildUI.selectedLink[1]);
+                    if (fillMode == 0 && eventData.pointerId == -1)
+                    {
+                        SelectGravSlot();
+                    }
+                    else if (fillMode == 1 && eventData.pointerId == -2 && selectedSlot == null)
+                    {
+                        RemoveGravLink(BuildUI.selectedLink[1]);
+                    }
                 }
             }
 
-            if (BuildUI.buildMode == 2)
+            if (BuildUI.buildMode == 2 && toolMode == -1)
             {
                 if (fillMode == 0)
                 {
@@ -412,13 +471,15 @@ public class GridClick : MonoBehaviour, IPointerDownHandler
                 }
             }
         }
+
+        clickedBoard = true;
     }
 
     public void ManualPointerEnter()
     {
         if (BuildUI.buildMode == 0 && BuildUI.selectedLink[0] != -1 && filled)
         {
-            if (fillMode == 1 && canSelect)
+            if (fillMode == 1)
             {
                 RemoveConSlot(true);
             }
@@ -438,7 +499,7 @@ public class GridClick : MonoBehaviour, IPointerDownHandler
 
         if (BuildUI.buildMode == 1 && BuildUI.selectedLink[1] != -1 && filled)
         {
-            if (fillMode == 0 && !Input.GetKeyDown(KeyCode.Mouse0) && !hasGravSlot)
+            if (fillMode == 0 && !Input.GetKeyDown(KeyCode.Mouse0) && !hasGravSlot && selectedSlot == null)
             {
                 AddGravLink();
             }
@@ -448,7 +509,7 @@ public class GridClick : MonoBehaviour, IPointerDownHandler
             }
         }
 
-        if (BuildUI.buildMode == 2)
+        if (BuildUI.buildMode == 2 && toolMode == -1)
         {
             if (fillMode == 0 && !Input.GetKeyDown(KeyCode.Mouse0))
             {

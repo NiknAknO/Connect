@@ -11,7 +11,6 @@ public class MakeSelectable : MonoBehaviour
     void Start()
     {
         selecter = GameObject.Find("Script Manager").GetComponent<BuildUI>();
-
         index = gameObject.transform.GetSiblingIndex();
     }
 

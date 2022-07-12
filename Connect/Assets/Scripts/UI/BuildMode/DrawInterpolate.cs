@@ -6,8 +6,8 @@ using UnityEngine.EventSystems;
 
 public class DrawInterpolate : MonoBehaviour
 {
-    float[] oldMouseCoords;
-    float[] newMouseCoords;
+    public static float[] oldMouseCoords;
+    public static float[] newMouseCoords;
 
     int[] test = new int[2];
 
@@ -23,12 +23,12 @@ public class DrawInterpolate : MonoBehaviour
     {
         newMouseCoords = new float[2] {Camera.main.ScreenToWorldPoint(Input.mousePosition)[0], Camera.main.ScreenToWorldPoint(Input.mousePosition)[1]};
 
-        if ((Input.GetKey(KeyCode.Mouse0) || Input.GetKey(KeyCode.Mouse1)) && !Input.GetKey(KeyCode.Mouse2)) FillLine(oldMouseCoords, newMouseCoords);
+        if ((Input.GetKey(KeyCode.Mouse0) || Input.GetKey(KeyCode.Mouse1)) && !Input.GetKey(KeyCode.Mouse2)) DrawLine(oldMouseCoords, newMouseCoords);
 
         newMouseCoords.CopyTo(oldMouseCoords, 0);
     }
 
-    static void FillLine(float[] oldCoords, float[] newCoords)
+    static void DrawLine(float[] oldCoords, float[] newCoords)
     {
         float[] currentStep = {oldCoords[0], oldCoords[1]};
         float[] nextStep = new float[2];
@@ -66,6 +66,11 @@ public class DrawInterpolate : MonoBehaviour
                 currentStep[0] = iSlope*(currentStep[1] - oldCoords[1]) + oldCoords[0];
             }
 
+            if (OnUI(oldCoords) && !OnUI(currentStep))
+            {
+                TriggerManualPointerEnter(currentSlot);
+            }
+
             while (!currentSlot.SequenceEqual(endSlot))
             {
                 if (direction[0] != 0 && direction[1] != 0)
@@ -92,11 +97,32 @@ public class DrawInterpolate : MonoBehaviour
                 nextStep.CopyTo(currentStep, 0);
             }
         }
+        else if (OnUI(oldCoords) && !OnUI(newCoords))
+        {
+            TriggerManualPointerEnter(currentSlot);
+        }
     }
 
     static void TriggerManualPointerEnter(int[] slot)
-    {   
+    {
         if (slot[0] >= 0 && slot[0] < 32 && slot[1] >= 0 && slot[1] < 32) GridClick.board.transform.GetChild(slot[1]).GetChild(slot[0]).GetChild(0).GetComponent<GridClick>().ManualPointerEnter();
+    }
+
+    public static bool OnUI(float[] coords)
+    {
+        float[] screenCoords = {Camera.main.WorldToScreenPoint(new Vector3(coords[0], coords[1], 0)).x * 1920/Screen.width - 960, Camera.main.WorldToScreenPoint(new Vector3(coords[0], coords[1], 0)).y * 1080/Screen.height - 540};
+
+        float[][] uiBoxes = {new float[]{-928, -528, -450, 350}, new float[]{-928, -828, 408, 508}, new float[]{-778, -678, 408, 508}, new float[]{-628, -528, 408, 508}, new float[]{783, 845.5f, -508, -445.5f}, new float[]{865.5f, 928, -508, -445.5f} };
+        
+        foreach(float[] uiBox in uiBoxes)
+        {
+            if (!uiBox.Equals(uiBoxes[0]) || BuildUI.buildMode == 0 || BuildUI.buildMode == 1)
+            {
+                if (screenCoords[0] > uiBox[0] && screenCoords[0] < uiBox[1] && screenCoords[1] > uiBox[2] && screenCoords[1] < uiBox[3]) return true;
+            }
+        }
+        
+        return false;
     }
 
     static bool OnUI(float[] oldCoords, float[] newCoords)

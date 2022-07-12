@@ -27,6 +27,11 @@ public class Movement : MonoBehaviour
         onOverlay = newToggle;
     }
 
+    public void ToggleMovement (bool newToggle)
+    {
+        startedMovement = newToggle;
+    }
+
     void Start()
     {
         cam = Camera.main;
@@ -58,10 +63,10 @@ public class Movement : MonoBehaviour
 
         newPositionChange[0] = newMouseCoords[0] - oldMouseCoords[0];
         newPositionChange[1] = newMouseCoords[1] - oldMouseCoords[1];
-        
+
         if (onOverlay && Input.GetKeyDown(KeyCode.Mouse2)) startedMovement = true;
 
-        if (startedMovement && Input.GetKey(KeyCode.Mouse2))
+        if (startedMovement && Input.GetKey(KeyCode.Mouse2) && !Input.GetKeyDown(KeyCode.Mouse2))
         {
             newCameraPosition[0] = Mathf.Clamp(transform.position.x + sensitivity * (newPositionChange[0]), -817.5f, 817.5f);
             newCameraPosition[1] = Mathf.Clamp(transform.position.y + sensitivity * (newPositionChange[1]), -817.5f, 817.5f);
@@ -69,7 +74,7 @@ public class Movement : MonoBehaviour
             transform.position = new Vector3 (newCameraPosition[0], newCameraPosition[1], -1);
         }
 
-        if (Input.GetKeyUp(KeyCode.Mouse2)) startedMovement = false;
+        if (Input.GetKeyUp(KeyCode.Mouse2) || (Input.GetKey(KeyCode.Mouse2) && (Input.GetKeyDown(KeyCode.Mouse0) || Input.GetKeyDown(KeyCode.Mouse1)) && EventSystem.current.IsPointerOverGameObject() && !GridClick.clickedBoard)) startedMovement = false;
         
         if (onOverlay && ((67.5f < cam.orthographicSize && Input.mouseScrollDelta.y > 0) || (1080 > cam.orthographicSize && Input.mouseScrollDelta.y < 0)))
         {
