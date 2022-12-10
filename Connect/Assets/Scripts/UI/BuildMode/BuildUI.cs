@@ -1,37 +1,38 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 
 public class BuildUI : MonoBehaviour
 {
     public static int buildMode;
     public static int[] selectedLink;
-
+    
     [SerializeField] GameObject[] hotbar;
     [SerializeField] Sprite[] hotbarSprites;
-
+    
     [SerializeField] GameObject buildWindow;
-
+    
     [SerializeField] GameObject[] linkWindow;
 
     [SerializeField] GameObject[] linkMaster;
     List<GameObject>[] linkList;
 
     [SerializeField] Sprite[] linkWindowSprites;
-    Color[] linkWindowTextColors;
-
-    public static Sprite[] slotIcons;
-
-    bool canScroll;
+    Color[] UIColors;
     
-    public void TestThis()
-    {
-        Debug.Log("Test");
-    }
+    public static Sprite[] slotIcons;
+    
+    bool canScroll;
+ 
+    [SerializeField] GameObject quitScreen;
+    [SerializeField] Sprite[] quitChoiceSprites;
 
+    int quitMode;
+    
     public void SetHotbar(int newBuildMode)
     {
         if (buildMode != -1) hotbar[buildMode].GetComponent<Image>().sprite = hotbarSprites[2*buildMode];
@@ -55,7 +56,7 @@ public class BuildUI : MonoBehaviour
                         if (aLineSet != GridClick.lineSet[0][selectedLink[0]]) aLineSet.SetActive(false);
                     }
                 }
-
+                
                 GridClick.DeselectGravSlot();
 
                 GridClick.ToggleGravSlots(false);
@@ -151,7 +152,7 @@ public class BuildUI : MonoBehaviour
         if (selectedLink[buildMode] != -1) 
         {
             linkList[buildMode][selectedLink[buildMode]].GetComponent<Image>().sprite = linkWindowSprites[0];
-            linkList[buildMode][selectedLink[buildMode]].GetComponentInChildren<Text>().color = linkWindowTextColors[buildMode];
+            linkList[buildMode][selectedLink[buildMode]].GetComponentInChildren<Text>().color = UIColors[buildMode];
         }
 
         if (selectedLink[buildMode] != windowNumber)
@@ -165,7 +166,7 @@ public class BuildUI : MonoBehaviour
         if (selectedLink[buildMode] != -1) 
         {
             linkList[buildMode][selectedLink[buildMode]].GetComponent<Image>().sprite = linkWindowSprites[buildMode + 1];
-            linkList[buildMode][selectedLink[buildMode]].GetComponentInChildren<Text>().color = linkWindowTextColors[2];
+            linkList[buildMode][selectedLink[buildMode]].GetComponentInChildren<Text>().color = UIColors[3];
 
             foreach(GameObject aLineSet in GridClick.lineSet[buildMode])
             {
@@ -178,6 +179,7 @@ public class BuildUI : MonoBehaviour
                     aLineSet.SetActive(true);
                 }
             }
+            
         }
         else
         {
@@ -290,6 +292,27 @@ public class BuildUI : MonoBehaviour
     {
         canScroll = updatedScroll;
     }
+    
+    public void OpenQuitScreen(bool save)
+    {
+        quitScreen.SetActive(true);
+
+        quitMode = save ? 1 : 0;
+        quitScreen.transform.GetChild(0).GetChild(0).GetChild(quitMode).gameObject.SetActive(true);
+    }
+    
+    public void ExitQuitScreen()
+    {
+        quitScreen.transform.GetChild(0).GetChild(0).GetChild(quitMode).gameObject.SetActive(false);
+        quitScreen.SetActive(false);
+
+        quitMode = -1;
+    }
+
+    public void QuitBuild()
+    {
+        SceneManager.LoadScene(0);
+    }
 
     public void BuildBuild(HashSet<(int, int)> lSlots, List<List<HashSet<(int, int)>>> lConnections, List<List<(int, int)>> lGravLines)
     {
@@ -362,13 +385,15 @@ public class BuildUI : MonoBehaviour
         
         linkList = new List<GameObject>[2]{ new List<GameObject>{}, new List<GameObject>{}};
 
-        linkWindowTextColors = new Color[3] {Color.black, new Color32(0, 160, 0, 255), Color.white};
+        UIColors = new Color[4] {Color.black, new Color32(0, 160, 0, 255), new Color32(236, 46, 29, 255), Color.white};
 
         canScroll = false;
 
         buildWindow.SetActive(false);
 
         slotIcons = new Sprite[]{Resources.Load<Sprite>("UI/Sprites/Grid/Slots/BuildSlotIcon"), Resources.Load<Sprite>("UI/Sprites/Grid/Slots/GravSlotIcon")};
+
+        quitMode = -1;
 
         GridClick.board = (GameObject) Instantiate(Resources.Load<GameObject>("UI/Prefabs/BuildMode/Grids/Very Large Grid"), GameObject.Find("Board").transform);
         GridClick.board.transform.SetAsFirstSibling();

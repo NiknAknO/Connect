@@ -42,7 +42,7 @@ public class PressHighlight : MonoBehaviour, IPointerDownHandler
                 {
                     highlightable.interactable = true;
                 }
-
+                
                 clickedObject = null;
                 didClick = false;
             }

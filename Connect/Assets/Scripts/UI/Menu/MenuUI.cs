@@ -21,6 +21,6 @@ public class MenuUI : MonoBehaviour
     }
 
     void Start() {
-        Screen.SetResolution(2560, 1440, true);
+        //Screen.SetResolution(2560, 1440, true);
     }
 }
